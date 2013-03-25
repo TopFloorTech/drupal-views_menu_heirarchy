@@ -1,0 +1,48 @@
+<?php
+ error_reporting(E_ALL);
+ ini_set('display_errors', 1);
+
+/**
+ * @file list_child_menu_items.module
+ * TODO: Enter file description here.
+ */
+
+/**
+ * Implements hook_init().
+ */
+function list_child_menu_items_views_pre_view(&$view) {
+  $view_tags = explode(' ', $view->tag);
+  if (array_search('provide_menu_children', $view_tags) !== FALSE) {
+    $current_children = _list_child_menu_items_get_current_menu_children();
+    $eids = array();
+    foreach ($current_children as $child) {
+      array_push($eids, _list_child_menu_items_item_to_entity($child));
+    }
+    $child_args = implode('+', $eids);
+    $view->set_arguments(array($child_args));
+  }
+}
+
+function _list_child_menu_items_get_current_menu_children() {
+  $parent = menu_link_get_preferred();
+  $parameters = array(
+    'active_trail' => array($parent['plid']),
+    'only_active_trail' => FALSE,
+    'min_depth' => $parent['depth'] + 1,
+    'max_depth' => $parent['depth'] + 1,
+    'conditions' => array('plid' => $parent['mlid']),
+  );
+  $children = menu_build_tree($parent['menu_name'], $parameters);
+  return $children;
+}
+
+function _list_child_menu_items_item_to_entity($item) {
+  switch ($item['link']['router_path']) {
+    case 'node/%':
+      $eid = explode('/', $item['link']['link_path']);
+      return $eid[1];
+      break;
+  }
+  $entity = array();
+  return $entity;
+}
